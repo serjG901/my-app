@@ -2,6 +2,10 @@
 import ReactDOM from "react-dom";
 import "./index.css";
 
+function getRandom(max) {
+  return Math.floor(Math.random() * max);
+}
+
 function InputForName() {
   const [value, setValue] = useState("");
 
@@ -31,10 +35,12 @@ function SquareF(props) {
   }, [props.value]);
 
   useEffect(() => {
+    let g = props.isGreen ? 1 : 4;
+    let r = props.isGreen ? 4 : 1;
     setBgColor(
       `rgb(
-        ${Math.floor(props.value)}, 
-        ${Math.floor(props.value / 2)}, 
+        ${Math.floor(props.value / r)}, 
+        ${Math.floor(props.value / g)}, 
         ${Math.floor(props.value / 4)}
         )`
     );
@@ -55,14 +61,43 @@ function SquareF(props) {
 }
 
 function Board() {
-  const status = "Next player: X";
-
   const [square, setSquare] = useState(Array(9).fill(null));
+  const [isGreen, setIsGreen] = useState(true);
+  const [sumGreen, setSumGreen] = useState(0);
+  const [sumRed, setSumRed] = useState(0);
+  const [winner, setWinner] = useState("go play");
+
+  const status = `Next player: ${isGreen ? "red" : "green"}`;
+
+  function fWinner(arr) {
+    if (arr.indexOf(null) === -1) {
+      sumGreen > sumRed ? setWinner("Green") : setWinner("Red");
+    }
+  }
+
+  useEffect(()=>{
+    fWinner(square);
+  }, [square]);
 
   function handleSquare(i) {
+    if (square.indexOf(null) === -1) return;
     const newSquare = square.slice();
-    newSquare[i] = Math.floor(Math.random() * 256);
+    newSquare[i] = getRandom(256);
     setSquare(newSquare);
+    setIsGreen(!isGreen);
+    sumRedGreen(newSquare[i], isGreen); 
+  }
+
+  function sumRedGreen(value, isGreen) {
+    console.log(value);
+    let sum;
+    if (!isGreen) {
+      sum = sumGreen + value;
+      setSumGreen(sum);
+    } else {
+      sum = sumRed + value;
+      setSumRed(sum);
+    }
   }
 
   function renderSquare(i) {
@@ -70,6 +105,7 @@ function Board() {
       <SquareF
         value={square[i]}
         item={i}
+        isGreen={isGreen}
         onClick={() => {
           handleSquare(i);
         }}
@@ -80,7 +116,7 @@ function Board() {
   function Matrix(props) {
     const item = props.item
       ? `| ${props.item.toString().padStart(3, "0")} |`
-      : "   ";
+      : "";
 
     return props.index % 3 ? (
       <>
@@ -88,7 +124,7 @@ function Board() {
       </>
     ) : (
       <>
-        <span>{item.toString().padStart(3, "0")}</span>
+        <span>{item}</span>
         <br></br>
       </>
     );
@@ -98,18 +134,11 @@ function Board() {
     let i = 0;
     const matrix = arr.map((item) => {
       i += 1;
-      return (
-        <Matrix
-          index={i}
-          item={item}
-          key={Math.floor(Math.random() * 1000)}
-        ></Matrix>
-      );
+      return <Matrix index={i} item={item} key={getRandom(10000)}></Matrix>;
     });
 
     return matrix;
   }
-  console.log(square);
 
   return (
     <div>
@@ -130,6 +159,9 @@ function Board() {
         {renderSquare(7)}
         {renderSquare(8)}
       </div>
+      <div>Red - {sumRed}</div>
+      <div>Green - {sumGreen}</div>
+      <div>Winner - {winner}</div>
     </div>
   );
 }
@@ -140,6 +172,7 @@ function Game() {
       <InputForName />
       <div className="game-board">
         <Board />
+        <hr></hr>
         <Board />
       </div>
       <div className="game-info">
